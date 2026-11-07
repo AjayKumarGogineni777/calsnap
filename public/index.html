@@ -322,19 +322,40 @@
 
   <!-- Exercise details: pictures, how-to, progress -->
   <dialog id="ex-sheet">
+    <header class="sheet-head">
+      <div>
+        <small id="ex-group"></small>
+        <h3 id="ex-name"></h3>
+      </div>
+      <button id="ex-close" class="icon-round" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
     <div class="ex-demo" id="ex-pics"></div>
-    <h3 id="ex-name"></h3>
-    <div id="ex-muscles" class="muscles"></div>
-    <p id="ex-cue" class="muted"></p>
-    <a id="ex-video" class="btn wide video-btn" target="_blank" rel="noopener">▶ Watch how to do it</a>
-    <details class="ex-steps">
-      <summary>Step-by-step instructions</summary>
-      <ol id="ex-steps"></ol>
-    </details>
-    <div id="ex-stats" class="stats3"></div>
-    <svg id="ex-chart" viewBox="0 0 320 140"></svg>
-    <ul id="ex-history" class="list"></ul>
-    <button id="ex-close" class="btn wide" type="button">Close</button>
+
+    <section class="ex-section">
+      <h4>Muscles worked</h4>
+      <svg id="ex-body" class="body-map" viewBox="0 0 220 214" role="img"></svg>
+      <div id="ex-muscles" class="muscles"></div>
+      <p class="map-key"><i class="k1"></i>Main muscle <i class="k2"></i>Supporting</p>
+    </section>
+
+    <section class="ex-section">
+      <h4>How to do it</h4>
+      <p id="ex-cue"></p>
+      <details class="ex-steps">
+        <summary>Step-by-step instructions</summary>
+        <ol id="ex-steps"></ol>
+      </details>
+      <a id="ex-video" class="btn wide video-btn" target="_blank" rel="noopener">▶ Watch a video</a>
+    </section>
+
+    <section class="ex-section">
+      <h4>Your progress</h4>
+      <div id="ex-stats" class="stats3"></div>
+      <svg id="ex-chart" viewBox="0 0 320 140"></svg>
+      <ul id="ex-history" class="list"></ul>
+    </section>
   </dialog>
 
   <!-- Food sources of one macro for the day -->

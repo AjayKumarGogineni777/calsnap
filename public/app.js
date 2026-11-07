@@ -977,13 +977,17 @@ function openExercise(ex) {
     ? `<img src="/ex/${ex.id}-0.jpg" alt=""><img class="b" src="/ex/${ex.id}-1.jpg" alt=""><span>Start ⇄ Finish</span>`
     : `<div class="ex-ph big">${GROUPS[ex.group].icon}</div>`;
   $('#ex-name').textContent = ex.name;
+  $('#ex-group').textContent = GROUPS[ex.group].name;
   const m = musclesOf(ex);
+  $('#ex-body').innerHTML = bodyMap(m.main, m.also);
+  $('#ex-body').setAttribute('aria-label', `Main: ${m.main.join(', ')}. Also: ${m.also.join(', ') || 'none'}`);
   $('#ex-muscles').innerHTML = m.main.map((x) => `<span class="main">${cap(x)}</span>`).join('') +
-    m.also.map((x) => `<span>${cap(x)}</span>`).join('');
+    m.also.map((x) => `<span class="also">${cap(x)}</span>`).join('');
   $('#ex-cue').textContent = ex.cue;
   $('#ex-video').href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${ex.name} proper form`)}`;
   $('#ex-steps').innerHTML = (EXERCISE_DETAILS[ex.id]?.steps || []).map((s) => `<li>${esc(s)}</li>`).join('');
   $('.ex-steps').open = false;
+  $('#ex-sheet').scrollTop = 0;
 
   const stat = (v, label) => `<div><span>${v}</span><small>${label}</small></div>`;
   const metric = {
@@ -1014,6 +1018,43 @@ function openExercise(ex) {
   $('#ex-sheet').showModal();
 }
 $('#ex-close').addEventListener('click', () => $('#ex-sheet').close());
+
+// Front and back body outline; main muscles solid, supporting muscles lighter. Shapes are mirrored left/right
+// around x = 50 within each 100-wide figure. Names match Free Exercise DB muscle names.
+function bodyMap(main, also) {
+  const cls = (muscle) => (!muscle ? 'n' : main.includes(muscle) ? 'm1' : also.includes(muscle) ? 'm2' : 'm0');
+  const pair = (muscle, cx, cy, rx, ry, rot = 0) => [cx, 100 - cx].map((x, i) =>
+    `<ellipse class="${cls(muscle)}" cx="${x}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${i ? -rot : rot} ${x} ${cy})"/>`).join('');
+  const mirror = (muscle, d) => `<path class="${cls(muscle)}" d="${d}"/>` +
+    `<path class="${cls(muscle)}" d="${d}" transform="matrix(-1 0 0 1 100 0)"/>`;
+  const frame = [
+    `<circle class="n" cx="50" cy="14" r="10"/>`, `<rect class="n" x="45" y="22" width="10" height="8" rx="2"/>`,
+    pair(null, 17, 99, 4, 5), pair(null, 43, 197, 6, 4), `<rect class="n" x="36" y="86" width="28" height="14" rx="5"/>`,
+  ].join('');
+  const front = frame +
+    pair('shoulders', 30, 38, 9, 7) +
+    mirror('chest', 'M50 34 C44 33 36 35 33 42 C33 50 40 55 50 54 Z') +
+    pair('biceps', 25, 58, 5, 11, 8) +
+    pair('forearms', 20, 81, 4.5, 12, 10) +
+    `<rect class="${cls('abdominals')}" x="42" y="56" width="16" height="30" rx="5"/>` +
+    mirror('abdominals', 'M41 58 L36 60 L37 82 L41 84 Z') +
+    pair('quadriceps', 42, 123, 8, 22, -4) +
+    pair(null, 42, 148, 5, 4) +
+    pair('calves', 42, 170, 5.5, 18);
+  const back = frame +
+    `<path class="${cls('traps')}" d="M50 26 L36 34 L50 44 L64 34 Z"/>` +
+    pair('shoulders', 30, 38, 9, 7) +
+    `<rect class="${cls('middle back')}" x="43" y="42" width="14" height="20" rx="4"/>` +
+    mirror('lats', 'M41 44 L33 44 L34 60 L41 76 Z') +
+    pair('triceps', 25, 58, 5, 11, 8) +
+    pair('forearms', 20, 81, 4.5, 12, 10) +
+    `<rect class="${cls('lower back')}" x="42" y="63" width="16" height="22" rx="4"/>` +
+    pair('glutes', 42.5, 98, 8.5, 9) +
+    pair('hamstrings', 42, 128, 7.5, 18, -3) +
+    pair('calves', 42, 167, 6.5, 15);
+  return `<g transform="translate(5 0)">${front}<text x="50" y="212">Front</text></g>` +
+    `<g transform="translate(115 0)">${back}<text x="50" y="212">Back</text></g>`;
+}
 
 function lineChart(svg, pts, label) {
   if (pts.length < 2) {

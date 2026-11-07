@@ -273,8 +273,20 @@ dialog { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior:
 .set-form .btn { flex: none; padding: 9px 14px; }
 #finish-btn { margin: 4px 0 24px; }
 
-#ex-sheet h3 { margin: 14px 0 4px; }
-#ex-cue { margin: 0 0 8px; font-size: 14px; }
+/* Exercise sheet: pinned header with close button */
+.sheet-head { position: sticky; top: -18px; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--card); margin: -18px -18px 12px; padding: 14px 18px 10px; border-bottom: 1px solid var(--line); }
+.sheet-head h3 { margin: 0; font-size: 20px; }
+.sheet-head small { color: var(--cal); font-weight: 600; }
+.sheet-head .icon-round { flex: none; background: var(--bg); }
+.ex-section { margin-top: 18px; }
+.ex-section h4 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+#ex-cue { margin: 0 0 6px; font-size: 15px; }
+.body-map { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto 8px; }
+.body-map .n, .body-map .m0 { fill: var(--line); }
+.body-map .m1 { fill: var(--cal); }
+.body-map .m2 { fill: var(--cal); fill-opacity: .4; }
+.body-map * { stroke: var(--card); stroke-width: 1; }
+.body-map text { fill: var(--muted); stroke: none; font-size: 10px; text-anchor: middle; }
 #ex-chart { width: 100%; height: auto; margin: 12px 0 4px; overflow: visible; }
 #ex-chart polyline { fill: none; stroke: var(--cal); stroke-width: 2.5; }
 #ex-chart circle { fill: var(--cal); }
@@ -314,8 +326,14 @@ dialog { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior:
 .muscles { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
 .muscles span { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); }
 .muscles span.main { background: var(--cal); color: #fff; }
+.muscles span.also { background: rgba(255, 122, 69, .18); color: var(--cal); }
+.muscles span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 6px; background: currentColor; opacity: .9; vertical-align: 0; }
+.muscles span.main::before { background: #fff; }
 .video-btn { display: block; text-align: center; text-decoration: none; margin: 4px 0 10px; }
 .ex-steps { margin-bottom: 8px; font-size: 14px; }
 .ex-steps summary { font-weight: 600; cursor: pointer; padding: 6px 0; }
 .ex-steps ol { padding-left: 20px; margin: 6px 0; }
 .ex-steps li { margin-bottom: 6px; color: var(--muted); }
+.map-key { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin: 0; }
+.map-key i { width: 10px; height: 10px; border-radius: 3px; background: var(--cal); display: inline-block; }
+.map-key i.k2 { opacity: .4; margin-left: 10px; }
