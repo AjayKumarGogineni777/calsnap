@@ -65,10 +65,20 @@ async function api(path, opts = {}) {
 // ---------- theme ----------
 const themeSelect = $('#theme-select');
 themeSelect.value = load('theme');
-themeSelect.addEventListener('change', () => {
-  save('theme', themeSelect.value);
-  if (themeSelect.value) document.documentElement.dataset.theme = themeSelect.value;
+function setTheme(t) {
+  save('theme', t);
+  themeSelect.value = t;
+  if (t) document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
+}
+themeSelect.addEventListener('change', () => setTheme(themeSelect.value));
+
+// One tap flips whatever is showing now (the iPhone setting or a saved choice).
+$('#theme-toggle').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(dark ? 'light' : 'dark');
 });
 
 // ---------- boot / login ----------
@@ -546,9 +556,7 @@ function showResult() {
   f.meal_type.value = pending.meal_type || mealTypeAt(new Date());
   f.servings.value = 1;
   for (const k of MACROS) f[k].value = r(pending[k] || 0);
-  $('#result-items').innerHTML = (pending.items || [])
-    .map((i) => `<li><span>${esc(i.name)} <small>${esc(i.portion)}</small></span><span>${r(i.calories)} kcal</span></li>`)
-    .join('');
+  renderItems();
   $('#fav-btn').textContent = favorite ? '★' : '☆';
   $('#fix-input').value = '';
   $('#result-error').hidden = true;
@@ -559,6 +567,29 @@ function showResult() {
 $('#fav-btn').addEventListener('click', () => {
   favorite = !favorite;
   $('#fav-btn').textContent = favorite ? '★' : '☆';
+});
+
+function renderItems() {
+  $('#result-items').innerHTML = (pending.items || [])
+    .map((i, n) => `
+      <li>
+        <span>${esc(i.name)} <small>${esc(i.portion)}</small></span>
+        <span>${r(i.calories)} kcal<button type="button" class="item-rm" data-item="${n}" aria-label="Remove ${esc(i.name)}">×</button></span>
+      </li>`)
+    .join('');
+}
+
+// Removing an item takes its numbers off the meal's totals.
+$('#result-items').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-item]');
+  if (!btn) return;
+  const [item] = pending.items.splice(Number(btn.dataset.item), 1);
+  const s = Number(resultForm.servings.value) || 1;
+  for (const k of MACROS) {
+    pending[k] = Math.max(0, (pending[k] || 0) - (Number(item[k]) || 0));
+    resultForm[k].value = r(pending[k] * s);
+  }
+  renderItems();
 });
 
 // Servings scales the numbers; editing a number directly sets the per-serving value.
@@ -801,7 +832,11 @@ function renderTrain() {
   $('#train-volume').hidden = !today.length;
   $('#train-volume').textContent = `${today.length} set${today.length === 1 ? '' : 's'}${volume ? ` · ${r(imperial() ? volume * LB_PER_KG : volume).toLocaleString()} ${unitW()}` : ''}`;
 
-  $('#train-list').innerHTML = EXERCISES.filter((ex) => ex.group === group).map(exerciseCard).join('');
+  // The user's own routine first, then extra suggestions.
+  const list = EXERCISES.filter((ex) => ex.group === group);
+  const mine = list.filter((ex) => !ex.extra), more = list.filter((ex) => ex.extra);
+  $('#train-list').innerHTML = (more.length ? '<h3 class="list-head">Your routine</h3>' : '') + mine.map(exerciseCard).join('') +
+    (more.length ? `<h3 class="list-head">More options <small>to add variety</small></h3>${more.map(exerciseCard).join('')}` : '');
 
   const groups = [...new Set(today.map((x) => EX[x.exercise].group))];
   const logged = groups.length && data.exercises.some((x) => x.name === workoutName(groups));
@@ -827,7 +862,8 @@ function exerciseCard(ex) {
       <button class="ex-top" type="button" data-info="${ex.id}">
         ${ex.img ? `<img src="/ex/${ex.id}-1.jpg" alt="" loading="lazy">` : `<div class="ex-ph">${GROUPS[ex.group].icon}</div>`}
         <span class="ex-info">
-          <b>${esc(ex.name)}${ex.extra ? ' <em>suggested</em>' : ''}</b>
+          <b>${esc(ex.name)}</b>
+          <span class="muscle-line">${musclesOf(ex).main.map(cap).join(' · ')}</span>
           <small>${last.length ? `Last · ${shortDate(last[0].date)}: ${last.map(setLabel).join(', ')}` : 'Not done yet'}</small>
           <span class="tip${t.up ? ' up' : ''}">${esc(t.tip)}</span>
         </span>
@@ -927,15 +963,27 @@ $('#finish-btn').addEventListener('click', async () => {
   }
 });
 
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+function musclesOf(ex) {
+  const d = EXERCISE_DETAILS[ex.id] || { muscles: [], also: [] };
+  return { main: d.muscles, also: d.also };
+}
+
 function openExercise(ex) {
   const best = workout.best.find((b) => b.exercise === ex.id);
   const hist = workout.history.filter((h) => h.exercise === ex.id);
+  // Start and finish photos alternate like a GIF to show the movement.
   $('#ex-pics').innerHTML = ex.img
-    ? `<figure><img src="/ex/${ex.id}-0.jpg" alt=""><figcaption>Start</figcaption></figure>
-       <figure><img src="/ex/${ex.id}-1.jpg" alt=""><figcaption>Finish</figcaption></figure>`
+    ? `<img src="/ex/${ex.id}-0.jpg" alt=""><img class="b" src="/ex/${ex.id}-1.jpg" alt=""><span>Start ⇄ Finish</span>`
     : `<div class="ex-ph big">${GROUPS[ex.group].icon}</div>`;
   $('#ex-name').textContent = ex.name;
+  const m = musclesOf(ex);
+  $('#ex-muscles').innerHTML = m.main.map((x) => `<span class="main">${cap(x)}</span>`).join('') +
+    m.also.map((x) => `<span>${cap(x)}</span>`).join('');
   $('#ex-cue').textContent = ex.cue;
+  $('#ex-video').href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${ex.name} proper form`)}`;
+  $('#ex-steps').innerHTML = (EXERCISE_DETAILS[ex.id]?.steps || []).map((s) => `<li>${esc(s)}</li>`).join('');
+  $('.ex-steps').open = false;
 
   const stat = (v, label) => `<div><span>${v}</span><small>${label}</small></div>`;
   const metric = {
@@ -969,10 +1017,12 @@ $('#ex-close').addEventListener('click', () => $('#ex-sheet').close());
 
 function lineChart(svg, pts, label) {
   if (pts.length < 2) {
-    svg.innerHTML = `<text x="160" y="70" text-anchor="middle">Log two sessions to see your progress</text>`;
+    svg.setAttribute('viewBox', '0 0 320 24');
+    svg.innerHTML = `<text x="160" y="16" text-anchor="middle">Log two sessions to see your progress</text>`;
     return;
   }
   const W = 320, H = 140, pad = 16;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const vals = pts.map((p) => p.v);
   const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
   const t0 = new Date(pts[0].date).getTime(), t1 = new Date(pts.at(-1).date).getTime();

@@ -25,7 +25,8 @@ runs on Cloudflare's free plan, and your data lives in your own database.
   each food, estimates the portion and returns calories, protein, carbs, fat and fiber.
 - **Text and barcode logging:** describe a meal ("2 eggs, toast with butter") or scan a packaged food's
   barcode. Label data comes from [Open Food Facts](https://world.openfoodfacts.org).
-- **Fix it:** correct an estimate in plain words ("it was 2 eggs, not 3") and Gemini re-estimates it.
+- **Fix it:** correct an estimate in plain words ("it was 2 eggs, not 3") and Gemini re-estimates it, or
+  tap × to remove a food it got wrong.
 - **Breakfast, lunch, dinner and snack:** each meal is sorted automatically from the food and the time
   you log it.
 - **Favorites and recent meals:** log a meal you eat often with one tap. Every meal can be edited.
@@ -43,7 +44,9 @@ runs on Cloudflare's free plan, and your data lives in your own database.
 **Workouts**
 - A weekly split (Back & Biceps, Chest & Triceps, Legs, Run). The Train tab opens on that day's workout,
   and suggests core when you haven't done it for a while.
-- Around 37 exercises, each with start and finish pictures and short form tips.
+- Around 37 exercises. Your own routine is listed first, then optional extras for variety.
+- Each exercise shows the muscles it targets, an animated start-to-finish demo, form tips, step-by-step
+  instructions and a link to how-to videos.
 - Log weight × reps, bodyweight reps, timed holds (plank) or runs (distance and time).
 - **Progressive overload:** each exercise shows a target based on last session. Once you hit 12 reps on
   every set, it tells you to add weight.
@@ -53,7 +56,7 @@ runs on Cloudflare's free plan, and your data lives in your own database.
 **Apple Watch / Apple Health:** steps, active calories and weight can sync through an iOS Shortcut (see
 below). Burned calories can optionally add to your daily budget.
 
-**Other:** light, dark or match-iPhone appearance. Units in kg/cm/ml or lb/in/oz.
+**Other:** one-tap light/dark switch in the top bar, or match your iPhone's setting in Settings. Units in kg/cm/ml or lb/in/oz.
 
 ## How it works
 
@@ -198,5 +201,5 @@ database created from `schema.sql` already has everything.
 - **Storage:** data is kept until you delete it. D1's free 5 GB holds hundreds of thousands of meals.
 - **Camera:** on some iPhones, the camera doesn't work inside home-screen web apps. Use **Library** with
   photos from the regular Camera app instead.
-- **Credits:** exercise pictures are from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db),
+- **Credits:** exercise pictures, target muscles and instructions are from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db),
   which is public domain. Barcode data is from [Open Food Facts](https://world.openfoodfacts.org) (ODbL).
