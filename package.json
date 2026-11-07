@@ -1,0 +1,13 @@
+{
+  "name": "calsnap",
+  "private": true,
+  "scripts": {
+    "db:local": "wrangler d1 execute calsnap --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute calsnap --remote --file=schema.sql",
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CalSnap">
+  <meta name="theme-color" content="#f6f6f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/style.css">
+  <!-- Apply the saved light/dark choice before first paint to avoid a flash. -->
+  <script>try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+  <title>CalSnap</title>
+</head>
+<body>
+  <!-- Access code screen -->
+  <section id="login" class="view" hidden>
+    <div class="card login">
+      <h1>CalSnap</h1>
+      <p class="muted">Enter your access code (the APP_TOKEN you set in Cloudflare).</p>
+      <form id="login-form">
+        <input id="login-token" type="password" autocomplete="current-password" placeholder="Access code" required>
+        <button class="btn primary" type="submit">Continue</button>
+      </form>
+    </div>
+  </section>
+
+  <main id="app" hidden>
+    <!-- Today -->
+    <section id="today" class="view">
+      <header class="datebar">
+        <button class="icon-btn" data-shift="-1" aria-label="Previous day">‹</button>
+        <div class="center">
+          <h2 id="date-label"></h2>
+          <span id="streak" class="streak" hidden></span>
+        </div>
+        <button class="icon-btn" data-shift="1" aria-label="Next day">›</button>
+      </header>
+
+      <div class="card hero">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle id="ring-fg" class="ring-fg" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="ring-text">
+          <div id="cal-left" class="big"></div>
+          <div id="cal-left-label" class="muted"></div>
+        </div>
+        <div class="hero-stats">
+          <div><span id="cal-budget"></span><small>Budget</small></div>
+          <div><span id="cal-eaten"></span><small>Eaten</small></div>
+          <div><span id="cal-burned"></span><small>Burned</small></div>
+        </div>
+      </div>
+
+      <div class="macros">
+        <div class="card macro" data-macro="protein"><small>Protein</small><b></b><div class="bar"><i></i></div><span class="muted"></span></div>
+        <div class="card macro" data-macro="carbs"><small>Carbs</small><b></b><div class="bar"><i></i></div><span class="muted"></span></div>
+        <div class="card macro" data-macro="fat"><small>Fat</small><b></b><div class="bar"><i></i></div><span class="muted"></span></div>
+        <div class="card macro" data-macro="fiber"><small>Fiber</small><b></b><div class="bar"><i></i></div><span class="muted"></span></div>
+      </div>
+
+      <div class="card activity">
+        <div><span id="steps"></span><small>Steps</small></div>
+        <div><span id="active"></span><small>Active kcal</small></div>
+      </div>
+
+      <div class="card water">
+        <div class="water-info">
+          <span>💧 <b id="water-amt"></b></span>
+          <small id="water-goal"></small>
+          <div class="bar"><i id="water-bar"></i></div>
+        </div>
+        <button class="btn" data-water="-1" aria-label="Remove a glass">−</button>
+        <button class="btn primary" data-water="1" aria-label="Add a glass">+ Glass</button>
+      </div>
+
+      <div class="card exercise">
+        <h3>🏃 Exercise</h3>
+        <ul id="exercises" class="items"></ul>
+        <form id="exercise-form">
+          <input name="exercise" placeholder="e.g. Running, weights, yoga" required>
+          <div class="row">
+            <input name="minutes" type="number" inputmode="numeric" min="1" placeholder="Minutes">
+            <input name="calories" type="number" inputmode="numeric" min="0" placeholder="kcal (opt.)">
+            <button class="btn primary" type="submit">Add</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="meals"></div>
+      <p id="meals-empty" class="muted center">Nothing logged yet. Tap + to snap your food.</p>
+    </section>
+
+    <!-- Workouts -->
+    <section id="train" class="view" hidden>
+      <header class="train-head">
+        <div>
+          <small id="train-day"></small>
+          <h2 id="train-title"></h2>
+        </div>
+        <span id="train-volume" class="pill" hidden></span>
+      </header>
+      <div id="group-chips" class="chips"></div>
+      <div id="core-hint" class="card hint row" hidden></div>
+      <div id="train-list"></div>
+      <button id="finish-btn" class="btn primary wide" type="button">Finish workout &amp; log calories</button>
+    </section>
+
+    <!-- Food picker -->
+    <section id="plan" class="view" hidden>
+      <h2>What should I eat?</h2>
+      <div class="card form">
+        <p id="plan-budget" class="budget"></p>
+        <label>Foods you have, one per line
+          <textarea id="plan-foods" rows="7" placeholder="Greek yogurt&#10;Chicken breast&#10;Rice&#10;Eggs&#10;Dark chocolate&#10;Banana"></textarea>
+        </label>
+        <label>Anything you're in the mood for? (optional)
+          <input id="plan-note" placeholder="e.g. something sweet, quick to make">
+        </label>
+        <button id="plan-btn" class="btn primary" type="button">Pick for me</button>
+      </div>
+      <div id="plan-results"></div>
+    </section>
+
+    <!-- Progress -->
+    <section id="progress" class="view" hidden>
+      <h2>Calories, last 7 days</h2>
+      <div class="card">
+        <div class="stats3">
+          <div><span id="c-avg">–</span><small>Daily avg</small></div>
+          <div><span id="c-target">–</span><small>Target</small></div>
+          <div><span id="c-days">–</span><small>Days on target</small></div>
+        </div>
+        <svg id="cal-chart" viewBox="0 0 320 170"></svg>
+      </div>
+
+      <h2>Your expenditure</h2>
+      <div id="adaptive" class="card"></div>
+
+      <h2>Weight</h2>
+      <div class="card">
+        <form id="weight-form" class="row">
+          <input id="weight-input" type="number" step="0.1" inputmode="decimal" required>
+          <span id="weight-unit" class="muted"></span>
+          <button class="btn primary" type="submit">Log today</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="stats3">
+          <div><span id="w-current">–</span><small>Trend</small></div>
+          <div><span id="w-start">–</span><small>Start</small></div>
+          <div><span id="w-change">–</span><small>Change</small></div>
+        </div>
+        <svg id="weight-chart" viewBox="0 0 320 160"></svg>
+        <p class="legend"><i class="dot"></i> Scale weight <i class="line"></i> Trend (smooths daily water swings)</p>
+      </div>
+      <ul id="weight-list" class="list"></ul>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="view" hidden>
+      <h2>Settings</h2>
+      <p id="setup-hint" class="card hint" hidden>Fill in your details and tap Calculate to set your daily targets.</p>
+
+      <div class="card form">
+        <label>Appearance
+          <select id="theme-select">
+            <option value="">Match iPhone setting</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+      </div>
+
+      <form id="profile-form" class="card form">
+        <label>Units
+          <select name="units"><option value="metric">Metric (kg, cm, ml)</option><option value="imperial">Imperial (lb, in, oz)</option></select>
+        </label>
+        <label>Sex
+          <select name="sex"><option value="male">Male</option><option value="female">Female</option></select>
+        </label>
+        <label>Age <input name="age" type="number" inputmode="numeric" min="13" max="100" required></label>
+        <label><span>Height (<span class="u-h">cm</span>)</span> <input name="height" type="number" step="0.1" inputmode="decimal" required></label>
+        <label><span>Weight (<span class="u-w">kg</span>)</span> <input name="weight" type="number" step="0.1" inputmode="decimal" required></label>
+        <label>Activity
+          <select name="activity">
+            <option value="1.2">Sedentary</option>
+            <option value="1.375">Light (1–3 workouts/wk)</option>
+            <option value="1.55">Moderate (3–5/wk)</option>
+            <option value="1.725">Very active (6–7/wk)</option>
+            <option value="1.9">Athlete</option>
+          </select>
+        </label>
+        <label>Goal
+          <select name="goal"><option value="lose">Lose weight</option><option value="maintain">Maintain</option><option value="gain">Gain weight</option></select>
+        </label>
+        <button id="calc-btn" class="btn" type="button">Calculate targets</button>
+
+        <h3>Daily targets</h3>
+        <div class="grid2">
+          <label>Calories <input name="t_calories" type="number" inputmode="numeric" required></label>
+          <label>Protein (g) <input name="t_protein" type="number" inputmode="numeric" required></label>
+          <label>Carbs (g) <input name="t_carbs" type="number" inputmode="numeric" required></label>
+          <label>Fat (g) <input name="t_fat" type="number" inputmode="numeric" required></label>
+          <label>Fiber (g) <input name="t_fiber" type="number" inputmode="numeric" required></label>
+        </div>
+        <label><span>Water goal (<span class="u-v">ml</span>)</span> <input name="water_goal" type="number" inputmode="numeric" required></label>
+        <label class="check"><input name="add_burned" type="checkbox"> Add burned calories (Apple Watch + logged exercise) to my budget</label>
+        <button class="btn primary" type="submit">Save</button>
+      </form>
+
+      <details class="card">
+        <summary>Sync Apple Health / Watch</summary>
+        <p class="muted">Build an iOS Shortcut that sends today's numbers to CalSnap, then run it from a Personal Automation (e.g. hourly, or when you open CalSnap). See README for step-by-step instructions.</p>
+        <p class="muted">Endpoint: <code id="sync-url"></code></p>
+      </details>
+
+      <button id="logout" class="btn danger" type="button">Sign out</button>
+    </section>
+
+    <button id="add-btn" class="fab" aria-label="Log food">+</button>
+
+    <nav class="tabs">
+      <button data-tab="today" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>Today</button>
+      <button data-tab="train"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12"/></svg>Train</button>
+      <button data-tab="plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M16 21V3c2.5 0 4 2.5 4 6s-1.5 5-4 5"/></svg>Pick</button>
+      <button data-tab="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progress</button>
+      <button data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</button>
+    </nav>
+  </main>
+
+  <!-- Add / edit food sheet -->
+  <dialog id="sheet">
+    <div id="step-input">
+      <h3>Log food</h3>
+      <div class="row">
+        <button id="camera-btn" class="btn primary" type="button">📷 Camera</button>
+        <label class="btn photo-btn">🖼 Library
+          <input id="library-input" type="file" accept="image/*" multiple hidden>
+        </label>
+        <button id="scan-btn" class="btn" type="button">▥ Barcode</button>
+      </div>
+      <div id="photo-strip" hidden></div>
+      <p id="sheet-error" class="error" hidden></p>
+      <textarea id="note-input" rows="2" placeholder="Optional: describe it (e.g. '2 eggs, toast with butter')"></textarea>
+      <div class="row">
+        <button id="sheet-cancel" class="btn" type="button">Cancel</button>
+        <button id="describe-btn" class="btn" type="button">Analyze text</button>
+      </div>
+      <h4 id="recent-title" hidden>Favorites &amp; recent</h4>
+      <ul id="recent-list" class="recent"></ul>
+    </div>
+    <div id="step-camera" hidden>
+      <video id="cam-video" autoplay playsinline muted></video>
+      <p id="cam-msg" class="muted center" hidden>Camera unavailable. Allow camera access for this site in iPhone Settings, or use Library.</p>
+      <p class="muted center">Snap one or more photos (different angles or dishes), then tap Done.</p>
+      <div class="row">
+        <button id="cam-done" class="btn" type="button">Done</button>
+        <button id="cam-snap" class="btn primary" type="button">Snap</button>
+      </div>
+    </div>
+    <div id="step-scan" hidden>
+      <video id="scan-video" playsinline muted></video>
+      <p id="scan-msg" class="muted center">Point the camera at the barcode</p>
+      <form id="code-form" class="row">
+        <input id="code-input" inputmode="numeric" pattern="\d{6,14}" placeholder="Or type the barcode number" required>
+        <button class="btn" type="submit">Look up</button>
+      </form>
+      <button id="scan-cancel" class="btn wide" type="button">Back</button>
+    </div>
+    <div id="step-loading" hidden>
+      <img id="preview" alt="">
+      <p class="center"><span class="spinner"></span> <span id="loading-text">Analyzing…</span></p>
+    </div>
+    <form id="step-result" hidden>
+      <img id="result-photo" alt="">
+      <div class="row title-row">
+        <input name="meal_name" class="title-input" required>
+        <button id="fav-btn" class="star" type="button" aria-label="Favorite">☆</button>
+      </div>
+      <div class="grid2">
+        <label>Calories <input name="calories" type="number" inputmode="numeric" required></label>
+        <label>Protein (g) <input name="protein" type="number" inputmode="numeric" required></label>
+        <label>Carbs (g) <input name="carbs" type="number" inputmode="numeric" required></label>
+        <label>Fat (g) <input name="fat" type="number" inputmode="numeric" required></label>
+        <label>Fiber (g) <input name="fiber" type="number" inputmode="numeric" required></label>
+        <label>Meal
+          <select name="meal_type">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="snack">Snack</option>
+          </select>
+        </label>
+        <label>Servings <input name="servings" type="number" step="0.25" min="0.25" value="1" inputmode="decimal"></label>
+      </div>
+      <ul id="result-items" class="items"></ul>
+      <div class="row fix-row">
+        <input id="fix-input" placeholder="Fix it: e.g. 'it was 2 eggs, not 3'">
+        <button id="fix-btn" class="btn" type="button">Fix</button>
+      </div>
+      <p id="result-error" class="error" hidden></p>
+      <div class="row actions">
+        <button id="result-cancel" class="btn" type="button">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+      <button id="result-delete" class="btn danger" type="button" hidden>Delete meal</button>
+    </form>
+  </dialog>
+
+  <!-- Exercise details: pictures, how-to, progress -->
+  <dialog id="ex-sheet">
+    <div class="ex-pics" id="ex-pics"></div>
+    <h3 id="ex-name"></h3>
+    <p id="ex-cue" class="muted"></p>
+    <div id="ex-stats" class="stats3"></div>
+    <svg id="ex-chart" viewBox="0 0 320 140"></svg>
+    <ul id="ex-history" class="list"></ul>
+    <button id="ex-close" class="btn wide" type="button">Close</button>
+  </dialog>
+
+  <!-- Food sources of one macro for the day -->
+  <dialog id="sources">
+    <h3 id="sources-title"></h3>
+    <ul id="sources-list" class="items"></ul>
+    <p id="sources-empty" class="muted">Nothing logged yet.</p>
+    <button id="sources-close" class="btn wide" type="button">Close</button>
+  </dialog>
+
+  <div id="toast" hidden></div>
+  <script src="/exercises.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

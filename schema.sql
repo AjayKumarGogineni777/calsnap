@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS profile (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS meals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  name TEXT NOT NULL,
+  calories REAL NOT NULL,
+  protein REAL NOT NULL,
+  carbs REAL NOT NULL,
+  fat REAL NOT NULL,
+  items TEXT,
+  photo TEXT,
+  favorite INTEGER NOT NULL DEFAULT 0,
+  fiber REAL NOT NULL DEFAULT 0,
+  meal_type TEXT
+);
+CREATE INDEX IF NOT EXISTS meals_date ON meals(date);
+CREATE TABLE IF NOT EXISTS weights (date TEXT PRIMARY KEY, kg REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS health (date TEXT PRIMARY KEY, steps INTEGER, active_kcal REAL);
+CREATE TABLE IF NOT EXISTS water (date TEXT PRIMARY KEY, ml INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, name TEXT NOT NULL, minutes INTEGER, calories REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS sets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  exercise TEXT NOT NULL,
+  reps INTEGER,
+  weight REAL,   -- kg
+  seconds INTEGER,
+  km REAL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS sets_exercise_date ON sets(exercise, date);

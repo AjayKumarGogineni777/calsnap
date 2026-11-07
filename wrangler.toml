@@ -1,0 +1,8 @@
+name = "calsnap"
+pages_build_output_dir = "public"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "calsnap"
+database_id = "102cfa6b-8a7a-457b-9fc0-ad98a8af48cc"
